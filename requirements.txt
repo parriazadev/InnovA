@@ -1,0 +1,11 @@
+streamlit
+supabase
+google-generativeai
+python-dotenv
+feedparser
+pandas
+requests
+pytest
+pytest-mock
+plotly
+openpyxl

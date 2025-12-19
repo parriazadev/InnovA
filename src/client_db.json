@@ -1,0 +1,123 @@
+[
+  {
+    "id": "cli_001",
+    "name": "RetailChile S.A.",
+    "industry": "Retail / E-commerce",
+    "tech_stack": {
+      "cloud": [
+        "GCP",
+        "On-Premise"
+      ],
+      "backend": [
+        "Java Spring Boot",
+        "Node.js",
+        "AS/400 (Legacy)"
+      ],
+      "frontend": [
+        "React",
+        "Next.js"
+      ],
+      "data": [
+        "BigQuery",
+        "Oracle"
+      ]
+    },
+    "pain_points": [
+      "Lentitud en consultas de stock en tiempo real por el Legacy.",
+      "Costos elevados de BigQuery por consultas ineficientes.",
+      "Personalización de ofertas en el e-commerce es muy básica."
+    ],
+    "strategic_goals": [
+      "Omnicanalidad total 2026.",
+      "Hiper-personalización con IA."
+    ]
+  },
+  {
+    "id": "cli_002",
+    "name": "Banco Andino",
+    "industry": "Banca / Finanzas",
+    "tech_stack": {
+      "cloud": [
+        "AWS (Híbrido)"
+      ],
+      "backend": [
+        "Java EE",
+        "Cobol",
+        "Python (Analytics)"
+      ],
+      "frontend": [
+        "Angular"
+      ],
+      "data": [
+        "SQL Server",
+        "Data Lake en S3"
+      ]
+    },
+    "pain_points": [
+      "Falsos positivos altos en detección de fraude.",
+      "Onboarding digital de clientes es lento y manual.",
+      "Dificultad para modernizar el Core Bancario."
+    ],
+    "strategic_goals": [
+      "Banco 100% digital para segmento joven.",
+      "Automatización de riesgo crediticio."
+    ]
+  },
+  {
+    "id": "cli_003",
+    "name": "Minería del Norte",
+    "industry": "Minería / Recursos Naturales",
+    "tech_stack": {
+      "cloud": [
+        "Azure"
+      ],
+      "backend": [
+        ".NET Core",
+        "Python"
+      ],
+      "frontend": [
+        "Blazor",
+        "PowerBI"
+      ],
+      "data": [
+        "SAP HANA",
+        "Azure IoT Hub"
+      ]
+    },
+    "pain_points": [
+      "Mantenimiento predictivo de camiones no es preciso.",
+      "Seguridad de trabajadores en faena.",
+      "Conectividad intermitente en operaciones."
+    ],
+    "strategic_goals": [
+      "Operación autónoma 2030.",
+      "Gemelos digitales de plantas de procesamiento."
+    ]
+  },
+  {
+    "id": "cli_1766104122",
+    "name": "Latam Airlines",
+    "industry": "Transporte / Aerolínea",
+    "tech_stack": {
+      "cloud": [
+        "AWS"
+      ],
+      "backend": [
+        "Node.js"
+      ],
+      "frontend": [
+        "React"
+      ],
+      "data": []
+    },
+    "pain_points": [],
+    "strategic_goals": []
+  },
+  {
+    "id": "cli_1766105767",
+    "name": "Codelco",
+    "industry": "Detectar con LLM",
+    "tech_context_raw": "\n--- FUENTE: https://www.codelco.com/ ---\nNuestra misión es maximizar el valor económico, ambiental y social de Codelco, y su contribución al Estado de manera sostenible a través de la minería del cobre y sus subproductos. Estas son las cifras relevantes de nuestra última entrega de resultados del período enero-septiembre 2025\n\n--- FUENTE: https://www.codelco.com/trabaja-en-codelco ---\nAccede a nuestra plataforma de postulación online. Puedes revisar las ofertas existentes, crear una cuenta para poder postular o ingresar al sistema si ya tienes una.\nEn esta sección encontrarás nuestras ofertas laborales e información de postulaciones a nuestros diferentes programas.\nSomos hombres y mujeres interesados en la innovación, la sustentabilidad y la eficiencia en el trabajo minero, para cumplir los compromisos con nuestros accionistas-ciudadanos, esto es, con todos los chilenos y chilenas.\nNos gusta Chile y, por eso, estamos empeñados en aplicar esfuerzo, contención y responsabilidad a nuestro negocio para focalizarnos en nuestra misión: generar el máximo de excedentes para el Estado de Chile.\nEn Codelco buscamos talentos que se apasionen por la minería y que asienten su labor en siete pilares: excelencia operativa, sobriedad financiera, eficiencia económica, sustentabilidad socio-ambiental, innovación científico-técnica, diversidad socio-cultural y transparencia corporativa.\nAprende sobre las etapas de los procesos, encuentra las respuestas a las preguntas más frecuentes e infórmate sobre los fraudes de reclutamiento, para que no caigas en ellos.\n¿Tienes dudas sobre trabajar con nosotros? ¿Por qué deberías pensar en ingresar a la Corporación?\n\n--- FUENTE: https://mi.codelco.cl/ ---\nIngresar\nBienvenid@s a MiCodelco, la intranet de la Corporación Nacional del Cobre.\nSi eres funcionario de Codelco, debes ingresar con tus credenciales de red o cuenta Microsoft. El login de acceso será pedido sólo la primera vez, a menos que cierres o Microsoft caduque tu sesión.\nIngresar\nRecuerda que debes ingresar a la intranet con tu RUT y número TIP; el login de acceso será pedido sólo la primera vez, a menos que cierres o Microsoft caduque tu sesión.\nSi tienes problemas contáctanos\n",
+    "last_updated": "2025-12-18 21:56:07.302709"
+  }
+]
