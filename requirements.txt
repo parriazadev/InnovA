@@ -9,3 +9,6 @@ pytest
 pytest-mock
 plotly
 openpyxl
+duckduckgo_search
+trafilatura
+
