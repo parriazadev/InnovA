@@ -66,9 +66,21 @@ class DatabaseClient:
             
         return self.client.table("trends").upsert(data, on_conflict="url").execute()
 
-    def fetch_trends(self):
-        # Traer ultimas 20 ordenadas por fecha
-        return self.client.table("trends").select("*").order("published_at", desc=True).limit(20).execute().data
+    def fetch_trends(self, limit=20, active_only=True):
+        query = self.client.table("trends").select("*").order("published_at", desc=True)
+        
+        if active_only:
+            # 1. Obtener nombres de fuentes activas
+            active_sources = self.client.table("rss_sources").select("name").eq("is_active", True).execute().data
+            active_names = [s['name'] for s in active_sources]
+            
+            if not active_names:
+                return [] # Si no hay fuentes activas, no devolvemos tendencias
+            
+            # 2. Filtrar query
+            query = query.in_("source", active_names)
+            
+        return query.limit(limit).execute().data
 
     def save_opportunity(self, opportunity):
         return self.client.table("opportunities").insert(opportunity).execute()
@@ -93,3 +105,15 @@ class DatabaseClient:
 
     def delete_rss_source(self, source_id):
         return self.client.table("rss_sources").delete().eq("id", source_id).execute()
+
+    def delete_opportunity(self, opportunity_id):
+        return self.client.table("opportunities").delete().eq("id", opportunity_id).execute()
+
+    def update_source_status(self, source_id, is_active):
+        return self.client.table("rss_sources").update({"is_active": is_active}).eq("id", source_id).execute()
+
+    def update_client(self, client_id, industry, tech_context):
+        return self.client.table("clients").update({
+            "industry": industry,
+            "tech_context_raw": tech_context
+        }).eq("id", client_id).execute()

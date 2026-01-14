@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import sys
 import os
+import time
 
 # Asegurar que podemos importar los módulos locales
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -34,61 +35,134 @@ def render_sidebar():
     return page
 
 def page_opportunities():
-    st.title("Radar de Oportunidades")
-    st.markdown("Monitor de inteligencia en tiempo real cruzando tendencias globales con nuestra cartera.")
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.info("💡 Este panel muestra las oportunidades de negocio detectadas por el motor de IA.")
-    with col2:
-        if st.button("🚀 Ejecutar Análisis IA", type="primary", use_container_width=True):
-            with st.spinner("Analizando tendencias vs clientes..."):
-                matcher = OpportunityMatcher()
-                matches = matcher.run_matching_cycle()
-                matcher.save_opportunities(matches)
-            st.success("Análisis completado.")
+    # --- Top Actions Row & Selector ---
+    db = DatabaseClient()
+    clients = db.fetch_clients()
+    
+    # Selector logic (Moved up)
+    client_map = {c['name']: c for c in clients}
+    all_client_names = sorted(list(client_map.keys()))
+    
+    c1, _, c2 = st.columns([2, 1, 2])
+    with c1:
+        st.title("Radar de Oportunidades")
+        st.markdown("Gestión en tiempo real.")
+    with c2:
+        selected_client_filter = st.selectbox("📂 Filtrar Análisis/Vista:", ["Todos"] + all_client_names)
+        trend_limit_val = st.slider("Límite de Tendencias", min_value=1, max_value=20, value=5, help="Define cuántas noticias analizar por cliente")
+
+    # Boton de Analisis (Depende del filtro)
+    if st.button("🚀 Ejecutar Análisis IA", type="primary", use_container_width=True):
+        matcher = OpportunityMatcher()
+        matches = []
+        
+        # UI Feedback
+        target_msg = f"para {selected_client_filter}" if selected_client_filter != "Todos" else "Global"
+        
+        with st.status(f"🧠 Ejecutando Análisis ({target_msg})...", expanded=True) as status:
+            st.write("Iniciando motor cognitivo...")
+            
+            # Pasamos filtro y limite
+            for update in matcher.run_matching_cycle(specific_client_name=selected_client_filter, trend_limit=trend_limit_val):
+                if update["type"] == "log":
+                    st.write(update["message"])
+                elif update["type"] == "result":
+                    matches = update["data"]
+            
+            status.update(label="✅ Análisis Completado!", state="complete", expanded=False)
+        
+        if matches:
+            matcher.save_opportunities(matches)
+            st.success(f"Se encontraron {len(matches)} nuevas oportunidades.")
+            time.sleep(1)
             st.rerun()
+        else:
+            st.warning("El análisis terminó sin nuevas oportunidades.")
 
     st.divider()
     
-    db = DatabaseClient()
     opportunities = db.fetch_opportunities()
-
+    
     if not opportunities:
-        st.warning("No hay oportunidades recientes.")
+        st.info("No hay oportunidades detectadas aún.")
         return
 
-    for op in opportunities:
-        score = op.get('match_score')
-        client = op.get('client_name')
-        trend = op.get('trend_title')
-        reasoning = op.get('reasoning')
-        
-        # Procesar reasoning
-        if isinstance(reasoning, str):
-            try:
-                reasoning = json.loads(reasoning)
-            except:
-                reasoning = [reasoning]
-        
-        # Determinar color según score
-        color = "red" if score > 90 else "orange" if score > 75 else "blue"
-        
-        with st.expander(f"🌟 [{score}%] {client} + {trend}"):
-            c1, c2 = st.columns([2, 1])
-            with c1:
-                st.markdown(f"**Pitch Sugerido**")
-                st.code(op.get('generated_pitch'), language="text")
-                st.markdown("**Por qué es relevante**")
+    # Filter View Logic (Uses the same selector)
+    if selected_client_filter != "Todos":
+        filtered_ops = [op for op in opportunities if op.get('client_name') == selected_client_filter]
+    else:
+        filtered_ops = opportunities
+
+    if not filtered_ops:
+        st.warning(f"No hay oportunidades guardadas para {selected_client_filter}.")
+        return
+
+    # FEED VIEW IMPLEMENTATION
+    st.markdown("### Business Opportunity Feed")
+    
+    # Center column for feed look
+    _, feed_col, _ = st.columns([1, 6, 1])
+    
+    with feed_col:
+        for op in filtered_ops:
+            client_name = op.get('client_name', 'Unknown')
+            client_data = client_map.get(client_name, {})
+            industry = client_data.get('industry', 'General')
+            score = op.get('match_score', 0)
+            
+            # Feed Card
+            with st.container(border=True):
+                # Header: Client & Badge
+                h1, h2 = st.columns([3, 1])
+                with h1:
+                    st.markdown(f"### {client_name}")
+                    st.caption(f"Industria: {industry}")
+                with h2:
+                    # Circular score or Badge
+                    color_hex = "#28a745" if score >= 90 else "#ffc107" if score >= 75 else "#17a2b8"
+                    st.markdown(f"""
+                        <div style="text-align:center; background-color:{color_hex}; color:white; padding:10px; border-radius:10px;">
+                            <h2 style="margin:0; padding:0; color:white;">{score}%</h2>
+                            <small>Match</small>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                # Title
+                st.markdown(f"## {op.get('trend_title')}")
+                
+                # Full Content (Pitch)
+                st.markdown("#### Sales Pitch")
+                st.info(op.get('generated_pitch'))
+                
+                # Reasoning
+                st.markdown("#### Por qué es relevante")
+                reasoning = op.get('reasoning')
+                if isinstance(reasoning, str):
+                    try:
+                        reasoning = json.loads(reasoning)
+                    except:
+                        pass
+                
                 if isinstance(reasoning, list):
                     for r in reasoning:
                         st.markdown(f"- {r}")
                 else:
-                    st.markdown(f"- {reasoning}")
-            with c2:
-                st.metric("Score", f"{score}/100")
-                if score > 90:
-                    st.error("MATCH CRÍTICO")
+                    st.markdown(str(reasoning))
+                
+                # Action Buttons (Mockup)
+                b1, b2, b3 = st.columns([1, 1, 4])
+                with b1: 
+                    if st.button("💾 Guardar", key=f"save_{op.get('id')}"):
+                        st.toast(f"✅ Oportunidad para {client_name} guardada exitosamente.")
+                with b2:
+                    if st.button("❌ Descartar", key=f"dism_{op.get('id')}"):
+                        db.delete_opportunity(op.get('id'))
+                        st.toast("🗑️ Oportunidad descartada.")
+                        time.sleep(0.5)
+                        st.rerun()
+
+            st.markdown("---") # Spacer between cards
 
 def page_data_management():
     st.title("Gestión de Datos Maestros")
@@ -131,6 +205,49 @@ def page_data_management():
             st.info("No se encontraron clientes.")
             return
 
+        # --- SECCIÓN DE EDICIÓN (Inline para compatibilidad con versiones antiguas de Streamlit) ---
+        if 'editing_client' in st.session_state and st.session_state['editing_client']:
+            client_to_edit = st.session_state['editing_client']
+            
+            with st.container(border=True):
+                st.subheader(f"✏️ Editando: {client_to_edit['name']}")
+                c_form = st.columns([1, 2])
+                with c_form[0]:
+                    new_ind = st.text_input("Industria", value=client_to_edit.get('industry', ''))
+                with c_form[1]:
+                    # AI Generation Button
+                    c_label, c_btn = st.columns([1, 1])
+                    with c_label:
+                        st.write("Contexto Tecnológico")
+                    with c_btn:
+                        if st.button("✨ Generar con IA", key="gen_ai_ctx", help="Autocompletar usando Gemini", use_container_width=True):
+                            with st.spinner("Gemini está investigando a la empresa..."):
+                                m_gen = OpportunityMatcher()
+                                ai_context = m_gen.generate_tech_context(client_to_edit['name'], client_to_edit.get('industry'))
+                                # Update session state to reflect in text_area on rerun
+                                st.session_state['temp_edit_context'] = ai_context
+                                st.rerun()
+
+                    # Value logic: priority to temp_gen -> db_value -> empty
+                    curr_val = st.session_state.get('temp_edit_context', client_to_edit.get('tech_context_raw', ''))
+                    new_ctx = st.text_area("Contexto", value=curr_val, height=200, label_visibility="collapsed")
+                
+                b_save, b_cancel = st.columns([1, 4])
+                with b_save:
+                    if st.button("💾 Guardar Cambios", type="primary"):
+                        db.update_client(client_to_edit['id'], new_ind, new_ctx)
+                        st.success("Cliente actualizado.")
+                        del st.session_state['editing_client']
+                        if 'temp_edit_context' in st.session_state: del st.session_state['temp_edit_context'] # Cleanup
+                        st.rerun()
+                with b_cancel:
+                    if st.button("❌ Cancelar"):
+                        del st.session_state['editing_client']
+                        if 'temp_edit_context' in st.session_state: del st.session_state['temp_edit_context'] # Cleanup
+                        st.rerun()
+            st.divider()
+        # -------------------------------------------------------------------------------------------
+
         # Table Header
         h1, h2, h3, h4 = st.columns([2, 1.5, 3, 1])
         h1.markdown("**Cliente**")
@@ -160,9 +277,15 @@ def page_data_management():
                 st.caption(raw[:150] + "...")
             with r4:
                 # Acciones 
-                if st.button("🗑️", key=f"del_cli_{c.get('id')}", help="Eliminar Cliente"):
-                    db.delete_client(c.get('id'))
-                    st.rerun()
+                c_edit, c_del = st.columns(2)
+                with c_edit:
+                    if st.button("✏️", key=f"edit_cli_{c.get('id')}", help="Editar Contexto"):
+                        st.session_state['editing_client'] = c
+                        st.rerun()
+                with c_del:
+                    if st.button("🗑️", key=f"del_cli_{c.get('id')}", help="Eliminar Cliente"):
+                        db.delete_client(c.get('id'))
+                        st.rerun()
             
             st.markdown("---")
 
@@ -170,11 +293,26 @@ def page_data_management():
         st.subheader("Ingesta de Tendencias")
         st.info("Utilice este módulo para forzar una actualización manual de todas las fuentes RSS.")
         if st.button("🔄 Ejecutar Motor de Ingesta (RSS)"):
-            with st.spinner("Escaneando fuentes distribuidas..."):
-                ingestor = InnovationIngestor()
-                trends = ingestor.fetch_trends()
+            ingestor = InnovationIngestor()
+            trends = []
+            
+            with st.status("📡 Escaneando fuentes distribuidas e Inteligencia...", expanded=True) as status:
+                st.write("Conectando con feeds...")
+                
+                # Consumir generador de logs
+                for update in ingestor.fetch_trends():
+                    if update["type"] == "log":
+                        st.write(update["message"])
+                    elif update["type"] == "result":
+                        trends = update["data"]
+                
+                status.update(label=f"✅ Ingesta Completada! ({len(trends)} arts)", state="complete", expanded=False)
+
+            if trends:
                 ingestor.save_trends(trends)
-            st.success(f"Se procesaron {len(trends)} artículos nuevos.")
+                st.success(f"Se procesaron {len(trends)} artículos nuevos.")
+                time.sleep(2)
+                st.rerun()
 
 
 def page_sources():
@@ -216,23 +354,31 @@ def page_sources():
         st.info("No hay fuentes configuradas.")
         return
 
-    # Usamos st.dataframe para vista rapida, pero para badges y botones mejor custom layout rows
-    
     # Header
-    h1, h2, h3, h4, h5 = st.columns([2, 4, 1.5, 1.5, 1])
-    h1.markdown("**Nombre**")
-    h2.markdown("**URL**")
+    h1, h2, h3, h4, h5 = st.columns([1, 4, 1.5, 1.5, 1])
+    h1.markdown("**Activa**")
+    h2.markdown("**Nombre**")
     h3.markdown("**Categoría**")
     h4.markdown("**Asignación**")
     h5.markdown("**Acciones**")
     st.divider()
 
     for s in sources:
-        r1, r2, r3, r4, r5 = st.columns([2, 4, 1.5, 1.5, 1])
+        r1, r2, r3, r4, r5 = st.columns([1, 4, 1.5, 1.5, 1])
         
         with r1:
-            st.markdown(f"**{s['name']}**")
+            # Toggle de estado
+            is_active = s.get('is_active', True)
+            if st.toggle("", value=is_active, key=f"toggle_{s['id']}"):
+                if not is_active: # If it WAS inactive and now is active
+                     db.update_source_status(s['id'], True)
+                     # Optional: st.rerun() if immediate visual update needed beyond toggle state
+            else:
+                if is_active: # If it WAS active and now is inactive
+                     db.update_source_status(s['id'], False)
+
         with r2:
+            st.markdown(f"**{s['name']}**")
             st.caption(s['url'])
         with r3:
             st.markdown(f"`{s['category']}`")
